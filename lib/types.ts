@@ -1,7 +1,7 @@
 // 🔒 SHARED CONTRACTS — frozen. Every session imports from here.
 // Owned by Session 1. Do not edit in other sessions; add module-local types instead.
 
-export type Provider = "gemini" | "groq";
+export type Provider = "gemini" | "groq" | "groq2" | "nvidia";
 
 export type Message = {
   role: "user" | "assistant" | "system";
