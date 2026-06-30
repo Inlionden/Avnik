@@ -37,12 +37,19 @@ export default function InsightsPage() {
   const topCause = sortedCauses[0];
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
-
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold text-ink">Patterns</h1>
-        <p className="text-xs text-muted mt-0.5">What Avnik has learned about you.</p>
+    <div className="space-y-6 max-w-3xl mx-auto">
+      <div className="rounded-3xl border border-indigo-200/70 bg-gradient-to-br from-indigo-50 via-white to-cyan-50 p-5 shadow-sm">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-indigo-600">Patterns</p>
+            <h1 className="text-2xl font-black text-ink mt-1">Your habits are becoming legible.</h1>
+            <p className="text-sm text-muted mt-2">A calm view of what tends to slow you down, what helps you start, and what keeps moving.</p>
+          </div>
+          <div className="rounded-2xl border border-indigo-200 bg-white/80 px-3 py-2 text-right shrink-0">
+            <p className="text-[10px] uppercase tracking-[0.2em] text-muted">Signal</p>
+            <p className="text-sm font-semibold text-indigo-700">Growing</p>
+          </div>
+        </div>
       </div>
 
       {/* Stats grid */}

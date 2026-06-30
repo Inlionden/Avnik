@@ -19,6 +19,7 @@ export default function TaskList({ onFocus }: { onFocus?: (taskId: string) => vo
   const [input, setInput] = useState("");
   const [editId, setEditId] = useState<string | null>(null);
   const [editTitle, setEditTitle] = useState("");
+  const [focusHint, setFocusHint] = useState(false);
 
   useEffect(() => {
     setTasks(memory.get<Task[]>(memory.KEYS.tasks, []));
@@ -34,6 +35,8 @@ export default function TaskList({ onFocus }: { onFocus?: (taskId: string) => vo
     if (!t) return;
     persist([...tasks, newTask(t)]);
     setInput("");
+    setFocusHint(true);
+    window.setTimeout(() => setFocusHint(false), 1600);
   };
 
   const toggle = (id: string) =>
@@ -57,33 +60,38 @@ export default function TaskList({ onFocus }: { onFocus?: (taskId: string) => vo
 
   return (
     <div className="space-y-4">
-      {/* Add task */}
-      <div className="flex gap-2">
-        <input
-          className="flex-1 rounded-xl border border-line px-3 py-2 text-sm bg-surface text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-brand/40"
-          placeholder="Add a task… (Enter to save)"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && add()}
-        />
-        <button
-          onClick={add}
-          className="px-4 py-2 rounded-xl bg-brand text-white text-sm font-bold hover:bg-brand-600 transition"
-        >
-          +
-        </button>
+      <div className="rounded-2xl border border-brand/20 bg-brand/5 p-3">
+        <div className="flex gap-2">
+          <input
+            className="flex-1 rounded-xl border border-line px-3 py-2 text-sm bg-white text-ink placeholder:text-muted focus:outline-none focus:ring-2 focus:ring-brand/40"
+            placeholder="Add a task… (Enter to save)"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && add()}
+          />
+          <button
+            onClick={add}
+            className="px-4 py-2 rounded-xl bg-brand text-white text-sm font-bold hover:bg-brand-600 transition"
+          >
+            +
+          </button>
+        </div>
+        {focusHint && (
+          <p className="mt-2 text-[11px] text-brand font-medium">Good start — tap the timer icon to turn this into a focused session.</p>
+        )}
       </div>
 
       {/* Todo tasks */}
       {todo.length === 0 && (
-        <p className="text-sm text-muted text-center py-6">
-          No tasks yet — add one above!
-        </p>
+        <div className="rounded-2xl border border-dashed border-line bg-canvas/70 px-4 py-6 text-center">
+          <p className="text-sm font-semibold text-ink">No tasks yet — add one above.</p>
+          <p className="text-xs text-muted mt-1">Small actions count. Start with the one thing that makes the rest easier.</p>
+        </div>
       )}
 
       <div className="space-y-2">
         {todo.map((t) => (
-          <Card key={t.id} className="p-3 flex items-center gap-3">
+          <Card key={t.id} className="p-3 flex items-center gap-3 hover:border-brand/30 transition">
             <input
               type="checkbox"
               checked={false}
