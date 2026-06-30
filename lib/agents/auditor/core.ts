@@ -1,6 +1,6 @@
 // 🪞 Auditor — User evaluation agent. Reflection pattern. Intent vs action. A-F grade.
 import { chat } from "@/lib/ai";
-import type { HelmContext } from "./state";
+import type { HelmContext } from "../state";
 import type { AgentResult, Event } from "@/lib/types";
 
 export async function auditor(ctx: HelmContext): Promise<AgentResult> {

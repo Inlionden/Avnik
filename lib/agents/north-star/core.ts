@@ -1,7 +1,7 @@
 // ⭐ North Star — Future planning + task prioritization via Temporal Motivation Theory.
 // M = (Expectancy × Value) / (Impulsiveness × Delay)
 import { chat } from "@/lib/ai";
-import type { HelmContext, CurrentState } from "./state";
+import type { HelmContext, CurrentState } from "../state";
 import type { AgentResult, Task } from "@/lib/types";
 
 // TMT score for a single task (higher = more urgent to do NOW)

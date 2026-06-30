@@ -1,6 +1,6 @@
 // 📜 Chronicler — Agent info collector. Tracks what agents did and how well.
 import { chat } from "@/lib/ai";
-import type { HelmContext } from "./state";
+import type { HelmContext } from "../state";
 import type { AgentResult } from "@/lib/types";
 
 export async function chronicler(ctx: HelmContext): Promise<AgentResult> {

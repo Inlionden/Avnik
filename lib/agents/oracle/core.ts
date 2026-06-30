@@ -1,6 +1,6 @@
 // 🔮 Oracle — User info collector. Synthesizes signals about the USER.
 import { chat } from "@/lib/ai";
-import type { HelmContext } from "./state";
+import type { HelmContext } from "../state";
 import type { AgentResult, Event } from "@/lib/types";
 
 export async function oracle(ctx: HelmContext): Promise<AgentResult> {

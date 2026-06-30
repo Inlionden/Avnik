@@ -11,6 +11,7 @@ import { quartermaster } from "./quartermaster";
 import { oracle } from "./oracle";
 import { auditor } from "./auditor";
 import { chronicler } from "./chronicler";
+import { sentinel } from "./sentinel";
 import { archivist } from "./archivist";
 import { courier } from "./courier";
 import { promptsmith } from "./promptsmith";
@@ -18,7 +19,7 @@ import type { AgentResult, Message, Profile, BeliefState, Task, Event } from "@/
 
 type RouteName =
   | "tone" | "north-star" | "quartermaster"
-  | "oracle" | "auditor" | "chronicler"
+  | "oracle" | "auditor" | "chronicler" | "sentinel"
   | "archivist" | "courier" | "promptsmith";
 
 const ROUTING_SYSTEM = `You are Helmsman, the orchestrator of Avnik's agent network.
@@ -26,11 +27,12 @@ Classify the user's message into exactly one agent name.
 
 Agents and when to use them:
 - tone: emotional support, motivation, general chat, venting, "I feel...", mood-based conversation
-- north-star: task prioritization, future planning, "what should I do?", scheduling, "what's most important?"
-- quartermaster: picking a work technique, timer setup, "how long should I work?", Pomodoro, focus technique
-- oracle: "what patterns do you see?", deep analysis of user behavior, "why do I keep doing this?"
+- north-star: task prioritization, future planning, "what should I do?", scheduling, "what's most important?", life goals, Red Book
+- quartermaster: picking a work technique, timer setup, "how long should I work?", Pomodoro, triage, contracts, just start it
+- oracle: "what patterns do you see?", deep analysis of user behavior, "why do I keep doing this?", root cause
 - auditor: "how am I doing?", weekly review, self-evaluation, "give me honest feedback", "grade me"
-- chronicler: session recap, "what have you done?", reviewing agent history
+- chronicler: session recap, "what have you done?", reviewing agent history, board meeting, daily anchor, future self
+- sentinel: sleep, location, silence, "I just woke up", "I'm at the dining table", passive observation, wellness
 - archivist: "remember this", "store", "save", memory consolidation
 - courier: "pass this to", "give context", "what's my current state?"
 - promptsmith: "improve your response", "that was wrong", meta-feedback on agent behavior
@@ -53,15 +55,16 @@ async function route(ctx: HelmContext): Promise<RouteName> {
 }
 
 const AGENT_MAP: Record<RouteName, (ctx: HelmContext) => Promise<AgentResult>> = {
-  "tone":         toneSelector,
-  "north-star":   northStar,
+  "tone":          toneSelector,
+  "north-star":    northStar,
   "quartermaster": quartermaster,
-  "oracle":       oracle,
-  "auditor":      auditor,
-  "chronicler":   chronicler,
-  "archivist":    archivist,
-  "courier":      courier,
-  "promptsmith":  promptsmith,
+  "oracle":        oracle,
+  "auditor":       auditor,
+  "chronicler":    chronicler,
+  "sentinel":      sentinel,
+  "archivist":     archivist,
+  "courier":       courier,
+  "promptsmith":   promptsmith,
 };
 
 export type HelmRequest = {
