@@ -2,7 +2,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { ArrowRight, Zap, Star, BookOpen, BarChart3 } from "lucide-react";
+import { ArrowRight, Zap, BookOpen, Target, BarChart3, CheckCircle2, Quote } from "lucide-react";
 import { get, KEYS } from "@/lib/memory";
 import type { Task, Event } from "@/lib/types";
 
@@ -17,157 +17,158 @@ const QUOTES = [
   { text: "Concentrate all your thoughts upon the work at hand.", author: "Alexander Graham Bell" },
 ];
 
-const GREETINGS = [
-  { range: [5, 11],  text: "Good morning" },
-  { range: [11, 14], text: "Good afternoon" },
-  { range: [14, 18], text: "Good afternoon" },
-  { range: [18, 21], text: "Good evening" },
-  { range: [21, 24], text: "Good night" },
-  { range: [0, 5],   text: "Still up?" },
-];
-
 function getGreeting() {
   const h = new Date().getHours();
-  return GREETINGS.find(g => h >= g.range[0] && h < g.range[1])?.text ?? "Hello";
+  if (h < 5)  return "Still up?";
+  if (h < 12) return "Good morning";
+  if (h < 18) return "Good afternoon";
+  if (h < 21) return "Good evening";
+  return "Good night";
 }
 
 export default function HomePage() {
   const router = useRouter();
   const [input, setInput] = useState("");
   const [quote, setQuote] = useState(QUOTES[0]);
-  const [taskCount, setTaskCount] = useState(0);
+  const [openTasks, setOpenTasks] = useState(0);
   const [doneToday, setDoneToday] = useState(0);
+  const [streak, setStreak] = useState(0);
 
   useEffect(() => {
-    // Rotate quote daily (by day-of-year index)
     const day = Math.floor(Date.now() / 86_400_000);
     setQuote(QUOTES[day % QUOTES.length]);
 
-    // Load task stats
     const tasks = get<Task[]>(KEYS.tasks, []);
-    setTaskCount(tasks.filter(t => t.status !== "done").length);
+    setOpenTasks(tasks.filter(t => t.status !== "done").length);
+
     const todayStart = new Date().setHours(0, 0, 0, 0);
     const events = get<Event[]>(KEYS.events, []);
     setDoneToday(events.filter(e => e.type === "task_done" && e.ts > todayStart).length);
+
+    // crude streak: distinct days with any active event
+    const days = new Set(events.filter(e => e.source === "active").map(e => Math.floor(e.ts / 86_400_000)));
+    setStreak(days.size);
   }, []);
 
-  function handleSubmit() {
+  function submit() {
     if (!input.trim()) return;
     router.push(`/coach?q=${encodeURIComponent(input.trim())}`);
   }
 
-  const greeting = getGreeting();
+  const QUICK = [
+    { href: "/coach?mode=plan",  icon: Zap,       title: "What now?",   desc: "AI prioritizes" },
+    { href: "/journal",          icon: BookOpen,  title: "Sanctuary",   desc: "Write it out" },
+    { href: "/coach?mode=focus", icon: Target,    title: "Focus mode",  desc: "Start a session" },
+    { href: "/insights",         icon: BarChart3, title: "Patterns",    desc: "See yourself" },
+  ];
 
   return (
-    <div className="space-y-6 max-w-2xl mx-auto">
+    <div className="max-w-3xl mx-auto">
 
-      {/* Greeting */}
-      <div className="flex items-center justify-between pt-2">
-        <div>
-          <p className="text-xs font-medium text-muted uppercase tracking-widest">{greeting}</p>
-          <h1 className="text-2xl font-bold text-ink mt-0.5">What&apos;s alive in you today?</h1>
+      {/* ── Hero ── */}
+      <section className="relative pt-6 pb-10 anim-fade-up">
+        {/* Pill badge */}
+        <div className="inline-flex items-center gap-2 border border-border rounded-full px-3.5 py-1.5 mb-6 bg-surface">
+          <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+          <span className="text-[11px] font-semibold text-muted uppercase tracking-widest">30 agents · ready</span>
         </div>
-        <div className="w-10 h-10 rounded-full bg-gradient-to-br from-brand to-accent flex items-center justify-center shadow-md">
-          <Star className="size-5 text-white" />
+
+        {/* Greeting + headline */}
+        <p className="text-sm font-medium text-muted mb-2">{getGreeting()}.</p>
+        <h1 className="text-[40px] sm:text-[52px] font-black text-ink leading-[0.96] tracking-tight text-balance mb-6">
+          What&apos;s the one thing<br />
+          <span className="relative inline-block">
+            you&apos;re avoiding
+            <svg className="absolute -bottom-1 left-0 w-full" height="6" viewBox="0 0 400 6" preserveAspectRatio="none">
+              <path d="M0 5 Q200 0 400 5" stroke="#f59e0b" strokeWidth="3" fill="none" strokeLinecap="round" />
+            </svg>
+          </span>
+          ?
+        </h1>
+
+        {/* Top input — "upper sign where you can type" */}
+        <div className="relative max-w-xl">
+          <input
+            value={input}
+            onChange={e => setInput(e.target.value)}
+            onKeyDown={e => e.key === "Enter" && submit()}
+            placeholder="Tell Avnik what's on your mind…"
+            className="w-full rounded-full border border-border bg-surface pl-5 pr-14 py-4 text-[15px] text-ink placeholder:text-muted outline-none focus:border-ink transition-colors shadow-sm"
+          />
+          <button
+            onClick={submit}
+            className="absolute right-2 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-ink flex items-center justify-center hover:bg-brand-600 transition active:scale-95"
+          >
+            <ArrowRight className="size-4 text-white" />
+          </button>
         </div>
-      </div>
 
-      {/* Quick input — goes to coach */}
-      <div className="relative">
-        <input
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => e.key === "Enter" && handleSubmit()}
-          placeholder="Tell Avnik what's on your mind…"
-          className="w-full rounded-2xl border-2 border-line bg-surface px-5 py-4 pr-14 text-sm text-ink placeholder:text-muted outline-none focus:border-brand transition-all shadow-sm"
-        />
-        <button
-          onClick={handleSubmit}
-          className="absolute right-3 top-1/2 -translate-y-1/2 w-9 h-9 rounded-xl bg-brand flex items-center justify-center shadow-sm hover:bg-brand/90 transition"
-        >
-          <ArrowRight className="size-4 text-white" />
-        </button>
-      </div>
-
-      {/* Daily Quote card */}
-      <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#1e1b4b] via-[#312e81] to-[#4338ca] p-6 shadow-xl">
-        {/* subtle pattern */}
-        <div className="absolute inset-0 opacity-10" style={{
-          backgroundImage: "radial-gradient(circle at 20% 50%, white 1px, transparent 1px), radial-gradient(circle at 80% 20%, white 1px, transparent 1px)",
-          backgroundSize: "30px 30px",
-        }} />
-        <p className="text-[11px] font-semibold tracking-[0.2em] text-indigo-300 uppercase mb-3">Daily Anchor</p>
-        <blockquote className="relative z-10">
-          <p className="text-white/95 text-base font-medium leading-relaxed italic">&ldquo;{quote.text}&rdquo;</p>
-          <footer className="mt-3 text-indigo-300 text-xs font-medium">— {quote.author}</footer>
-        </blockquote>
-      </div>
-
-      {/* Stats row */}
-      <div className="grid grid-cols-3 gap-3">
-        <div className="rounded-2xl bg-surface border border-line p-4 text-center shadow-sm">
-          <p className="text-2xl font-bold text-ink">{taskCount}</p>
-          <p className="text-[11px] text-muted mt-1">Open tasks</p>
+        {/* Trust row */}
+        <div className="flex flex-wrap items-center gap-x-5 gap-y-2 mt-5 text-[12px] text-muted">
+          {["No sign-up", "Private by default", "Works offline"].map((b, i) => (
+            <span key={b} className="flex items-center gap-1.5 anim-fade-up" style={{ animationDelay: `${200 + i * 60}ms` }}>
+              <CheckCircle2 size={13} className="text-ink/50" /> {b}
+            </span>
+          ))}
         </div>
-        <div className="rounded-2xl bg-success/10 border border-success/20 p-4 text-center shadow-sm">
-          <p className="text-2xl font-bold text-success">{doneToday}</p>
-          <p className="text-[11px] text-muted mt-1">Done today</p>
+      </section>
+
+      {/* ── Daily Anchor quote (inverted block, template style) ── */}
+      <section className="mb-8 anim-fade-up delay-100">
+        <div className="relative rounded-2xl bg-ink text-white p-7 overflow-hidden">
+          <div className="absolute inset-0 opacity-[0.06]" style={{
+            backgroundImage: "linear-gradient(white 1px, transparent 1px), linear-gradient(90deg, white 1px, transparent 1px)",
+            backgroundSize: "40px 40px",
+          }} />
+          <Quote size={22} className="text-amber-400 mb-4 relative z-10" />
+          <p className="relative z-10 text-[11px] font-bold tracking-[0.2em] text-white/40 uppercase mb-3">Daily Anchor</p>
+          <blockquote className="relative z-10">
+            <p className="text-[19px] sm:text-[22px] font-bold leading-snug text-balance">&ldquo;{quote.text}&rdquo;</p>
+            <footer className="mt-4 text-[13px] text-white/50 font-medium">— {quote.author}</footer>
+          </blockquote>
         </div>
-        <Link href="/coach?mode=review" className="rounded-2xl bg-brand/10 border border-brand/20 p-4 text-center shadow-sm hover:bg-brand/20 transition">
-          <p className="text-2xl font-bold text-brand">↑</p>
-          <p className="text-[11px] text-muted mt-1">Review</p>
-        </Link>
-      </div>
+      </section>
 
-      {/* Quick actions */}
-      <div className="space-y-2">
-        <p className="text-xs font-semibold text-muted uppercase tracking-widest">Quick actions</p>
-        <div className="grid grid-cols-2 gap-2">
-          <Link href="/coach?mode=plan"
-            className="flex items-center gap-3 rounded-2xl bg-surface border border-line px-4 py-3 hover:border-brand/40 hover:bg-brand/5 transition shadow-sm group">
-            <div className="w-8 h-8 rounded-xl bg-brand/10 flex items-center justify-center group-hover:bg-brand/20 transition">
-              <Zap className="size-4 text-brand" />
+      {/* ── Stats (monochrome grid, template style) ── */}
+      <section className="mb-8 anim-fade-up delay-150">
+        <div className="grid grid-cols-3 gap-px bg-border border border-border rounded-2xl overflow-hidden">
+          {[
+            { value: openTasks, label: "Open tasks" },
+            { value: doneToday, label: "Done today" },
+            { value: streak,    label: "Active days" },
+          ].map(s => (
+            <div key={s.label} className="bg-surface flex flex-col items-center justify-center py-7 px-3 text-center">
+              <div className="text-[32px] font-black text-ink leading-none tabular-nums">{s.value}</div>
+              <div className="text-[12px] text-muted mt-2 font-medium">{s.label}</div>
             </div>
-            <div>
-              <p className="text-sm font-semibold text-ink">What now?</p>
-              <p className="text-[11px] text-muted">AI prioritizes</p>
-            </div>
-          </Link>
-
-          <Link href="/journal"
-            className="flex items-center gap-3 rounded-2xl bg-surface border border-line px-4 py-3 hover:border-amber-400/40 hover:bg-amber-50 transition shadow-sm group">
-            <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center group-hover:bg-amber-200 transition">
-              <BookOpen className="size-4 text-amber-600" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-ink">Journal</p>
-              <p className="text-[11px] text-muted">Write it out</p>
-            </div>
-          </Link>
-
-          <Link href="/coach?mode=focus"
-            className="flex items-center gap-3 rounded-2xl bg-surface border border-line px-4 py-3 hover:border-emerald-400/40 hover:bg-emerald-50 transition shadow-sm group">
-            <div className="w-8 h-8 rounded-xl bg-emerald-100 flex items-center justify-center group-hover:bg-emerald-200 transition">
-              <Star className="size-4 text-emerald-600" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-ink">Focus mode</p>
-              <p className="text-[11px] text-muted">Start a session</p>
-            </div>
-          </Link>
-
-          <Link href="/insights"
-            className="flex items-center gap-3 rounded-2xl bg-surface border border-line px-4 py-3 hover:border-purple-400/40 hover:bg-purple-50 transition shadow-sm group">
-            <div className="w-8 h-8 rounded-xl bg-purple-100 flex items-center justify-center group-hover:bg-purple-200 transition">
-              <BarChart3 className="size-4 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-sm font-semibold text-ink">Insights</p>
-              <p className="text-[11px] text-muted">See your patterns</p>
-            </div>
-          </Link>
+          ))}
         </div>
-      </div>
+      </section>
+
+      {/* ── Quick actions ── */}
+      <section className="mb-8 anim-fade-up delay-200">
+        <p className="text-[11px] font-bold uppercase tracking-widest text-muted mb-4">Quick actions</p>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {QUICK.map((q, i) => (
+            <Link
+              key={q.href}
+              href={q.href}
+              className="group flex items-center gap-4 rounded-2xl border border-border bg-surface px-5 py-4 hover:border-ink/25 hover:shadow-md transition-all anim-fade-up"
+              style={{ animationDelay: `${250 + i * 50}ms` }}
+            >
+              <div className="w-10 h-10 rounded-xl bg-ink flex items-center justify-center shrink-0 transition-transform group-hover:rotate-6 group-hover:scale-110">
+                <q.icon size={18} className="text-white" />
+              </div>
+              <div>
+                <p className="text-[15px] font-bold text-ink">{q.title}</p>
+                <p className="text-[12.5px] text-muted">{q.desc}</p>
+              </div>
+              <ArrowRight size={16} className="ml-auto text-muted opacity-0 group-hover:opacity-100 group-hover:translate-x-0.5 transition-all" />
+            </Link>
+          ))}
+        </div>
+      </section>
+
     </div>
   );
 }
