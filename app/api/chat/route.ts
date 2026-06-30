@@ -1,18 +1,43 @@
 import { NextRequest, NextResponse } from "next/server";
-import { chat } from "@/lib/ai";
-import type { Message, Provider } from "@/lib/types";
+import { registerAllAgents, helmsmanRun } from "@/lib/agents";
+import type { Message, Provider, Profile, BeliefState, Task, Event } from "@/lib/types";
+import type { CurrentState } from "@/lib/agents/state";
 
-const SYSTEM =
-  "You are Avnik, a warm and concise AI productivity companion. You help the user take the next small action instead of nagging. Keep replies short unless they ask you to go deeper.";
+// Register all agents on cold start (idempotent)
+registerAllAgents();
 
 export async function POST(req: NextRequest) {
   try {
-    const { messages, provider } = (await req.json()) as {
+    const body = (await req.json()) as {
       messages: Message[];
       provider?: Provider;
+      profile?: Profile;
+      beliefs?: BeliefState;
+      tasks?: Task[];
+      events?: Event[];
+      currentState?: Partial<CurrentState>;
     };
-    const reply = await chat(messages, { provider, system: SYSTEM });
-    return NextResponse.json({ reply });
+
+    const { messages, provider, profile, beliefs, tasks, events, currentState } = body;
+    const lastMessage = messages[messages.length - 1];
+
+    const result = await helmsmanRun({
+      input: lastMessage?.content ?? "",
+      messages,
+      profile,
+      beliefs,
+      tasks: tasks ?? [],
+      events: events ?? [],
+      currentState,
+    });
+
+    return NextResponse.json({
+      reply: result.text,
+      agent: result.agent,
+      route: result.route,
+      state: result.state,
+      sideEffects: result.sideEffects ?? [],
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "AI error";
     return NextResponse.json(
