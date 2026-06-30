@@ -9,6 +9,7 @@ import { predictSlipRisk, scoreSelf } from "@/lib/tools/analytics";
 import { estimateSleepFromGap, inferActivityFromPlace } from "@/lib/tools/sensing";
 import { analyzeMotion, type MotionReading } from "@/lib/tools/motion";
 import { passiveBeliefUpdate } from "@/lib/agents/tracker";
+import { sanitizeReply } from "@/lib/agents/conversation/sanitize";
 import type { Task, Event } from "@/lib/types";
 
 // Synthetic IMU window: gravity baseline + sinusoidal bounce at `freqHz`, plus rotation.
@@ -212,6 +213,26 @@ log("\n▶ TEST 12 — passiveBeliefUpdate() — always-on tracker turns chat te
   // Neutral text → no evidence → no update (null).
   const t3 = passiveBeliefUpdate({ input: "what's the weather like today", beliefs: t1?.beliefs });
   check("neutral text yields no spurious belief update", t3 === null, String(t3));
+}
+
+// ── TEST 13 — Reply sanitizer (the A+ polish — strips LLM artifacts)
+log("\n▶ TEST 13 — sanitizeReply() — removes self-corrections, filler, disclaimers");
+{
+  const leak = "That makes sense given all that's on your plate!  wait, let me rephrase that. What's feeling hardest right now?";
+  const s1 = sanitizeReply(leak);
+  check("strips 'wait, let me rephrase that'", !/rephrase/i.test(s1), s1);
+  check("keeps the real content", /feeling hardest/i.test(s1));
+
+  const filler = "Sure! Here's my response: you should start with the easiest task.";
+  const s2 = sanitizeReply(filler);
+  check("strips 'Sure!' + 'Here's my response:'", /^You should start/i.test(s2), s2);
+
+  const disclaimer = "As an AI language model, I can't feel. But your plan looks solid.";
+  const s3 = sanitizeReply(disclaimer);
+  check("strips 'As an AI…' disclaimer", !/as an ai/i.test(s3) && /plan looks solid/i.test(s3), s3);
+
+  const clean = "Work on the DBMS quiz first — it's worth the most and is due soonest.";
+  check("leaves clean text untouched", sanitizeReply(clean) === clean);
 }
 
 log("\n══════════════════════════════════════════════════════════════");

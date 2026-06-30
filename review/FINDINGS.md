@@ -62,3 +62,18 @@ npm run dev                             # then, in another shell:
 npx tsx scripts/test-conversations.ts   # 4 live conversations → review/CONVERSATION-TESTS.md
 npx tsx scripts/verify-belief-wiring.ts # 3-turn live belief-evolution check
 ```
+
+---
+
+## 🎯 A+ answer polish (follow-up pass)
+Raised response quality from B+ to A+ by fixing the three visible blemishes — all verified live in [`APLUS-DEMO.md`](APLUS-DEMO.md).
+
+| Blemish (before) | Fix | After |
+|---|---|---|
+| Sage leaked "…wait, let me rephrase that." | (a) anti-meta guard in all 3 tone prompts + temp 0.82/0.85→0.7/0.75; (b) deterministic `sanitizeReply()` strips self-corrections/filler/disclaimers; (c) **wired the Mentor layer** (`applyMentor`) into Helmsman Step 3.5 — it was dead code before. | 66-word clean vent, one micro-step, no artifacts |
+| Context-reader mislabeled lunch as "dinner/16:00" | Read the **event's** timestamp hour, not the wall clock | "~25 min around 13:00 … save deep work for 3pm" ✅ |
+| "No sleep data yet" (flat) | Useful fallback that asks for a quick self-report | graceful |
+
+**Biggest structural win:** the Mentor quality layer (sanitize + mood-tune + length-fit per mode) existed but was never called by anything. Now every response — from every agent — passes through it. The fit-checker only spends an LLM call when a reply is actually too long; sanitizing is free.
+
+New deterministic test: **TEST 13** (sanitizer) → suite now **35/35**.

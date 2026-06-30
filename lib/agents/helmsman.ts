@@ -6,6 +6,7 @@ import type { HelmContext, CurrentState } from "./state";
 import { DEFAULT_STATE, addToTrail, patchState } from "./state";
 import { runRegulator } from "./regulator";
 import { passiveBeliefUpdate } from "./tracker";
+import { applyMentor, type ChatMode } from "./conversation";
 import { toneSelector } from "./tone/selector";
 import { northStar } from "./north-star";
 import { quartermaster } from "./quartermaster";
@@ -83,6 +84,7 @@ export type HelmRequest = {
   tasks?: Task[];
   events?: Event[];
   currentState?: Partial<CurrentState>;
+  mode?: ChatMode; // chat | vent | plan | focus | review — controls Mentor length/tone
 };
 
 export async function helmsmanRun(req: HelmRequest): Promise<AgentResult & { state: CurrentState; route: string; beliefs?: BeliefState }> {
@@ -117,7 +119,10 @@ export async function helmsmanRun(req: HelmRequest): Promise<AgentResult & { sta
 
   // Step 3 — Act (run the chosen agent)
   const agentFn = AGENT_MAP[routeName];
-  const result = await agentFn({ ...ctx, input: cleanInput, state });
+  const rawResult = await agentFn({ ...ctx, input: cleanInput, state });
+
+  // Step 3.5 — Mentor (quality layer): sanitize artifacts + fit length/tone to the mode.
+  const result = await applyMentor(rawResult, { ...ctx, state }, req.mode ?? "chat");
 
   // Step 4 — Observe (log to trail)
   const finalState = addToTrail(state, {

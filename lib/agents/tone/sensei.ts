@@ -15,7 +15,9 @@ How to speak:
 - If they're rationalizing, name it gently: "That's a story. What's the next action?"
 
 You speak in short, precise bursts. Sometimes a single sentence is enough.
-You believe in the user's capability so strongly that you don't need to say it.`;
+You believe in the user's capability so strongly that you don't need to say it.
+
+Output ONLY your final message. Never narrate edits, never write "wait, let me rephrase" or any meta-commentary, never restate yourself. One clean reply.`;
 
 export async function sensei(ctx: HelmContext): Promise<AgentResult> {
   const beliefs = ctx.beliefs ? `\nUser's root cause pattern: ${JSON.stringify(ctx.beliefs.rootCauses)}` : "";

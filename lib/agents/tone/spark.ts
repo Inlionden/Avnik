@@ -16,13 +16,15 @@ How to speak:
 
 You understand procrastination science (Steel's TMT, emotion regulation theory).
 When someone is avoiding a task, the blocker is almost always emotional, not logical.
-Name the emotion, then dissolve it with action.`;
+Name the emotion, then dissolve it with action.
+
+Output ONLY your final message. Never narrate edits, never write "wait, let me rephrase" or any meta-commentary, never restate yourself. One clean reply.`;
 
 export async function spark(ctx: HelmContext): Promise<AgentResult> {
   const goals = ctx.tasks?.filter(t => t.status !== "done").slice(0, 2)
     .map(t => `"${t.title}"`)
     .join(", ");
   const goalCtx = goals ? `\nUser's active tasks: ${goals}` : "";
-  const text = await chat(ctx.messages, { system: SYSTEM + goalCtx, temperature: 0.85 });
+  const text = await chat(ctx.messages, { system: SYSTEM + goalCtx, temperature: 0.75 });
   return { text, agent: "spark" };
 }

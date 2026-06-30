@@ -18,6 +18,7 @@ export async function POST(req: NextRequest) {
       tasks?: Task[];
       events?: Event[];
       currentState?: Partial<CurrentState>;
+      mode?: "chat" | "vent" | "plan" | "focus" | "review";
     };
 
     const messages: Message[] = body.messages ?? [{ role: "user", content: body.input }];
@@ -35,6 +36,7 @@ export async function POST(req: NextRequest) {
       tasks: body.tasks ?? [],
       events: body.events ?? [],
       currentState: body.currentState,
+      mode: body.mode,
     });
 
     return NextResponse.json({

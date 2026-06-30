@@ -61,7 +61,20 @@
   ✅ 3 Hz big amplitude ⇒ running  —  running
   ✅ high rotation, low translation ⇒ turning
 
+▶ TEST 12 — passiveBeliefUpdate() — always-on tracker turns chat text into beliefs
+  ✅ natural text bootstraps beliefs (no prior needed)  —  evidence: asks_what_if_not_good_enough,rewrites_same_work
+  ✅ perfectionism/fear surface from rewrite+good-enough text  —  perfectionism 0.6725978647686833
+  ✅ second turn threads prior beliefs forward (output→input)
+  ✅ neutral text yields no spurious belief update  —  null
+
+▶ TEST 13 — sanitizeReply() — removes self-corrections, filler, disclaimers
+  ✅ strips 'wait, let me rephrase that'  —  That makes sense given all that's on your plate! What's feeling hardest right now?
+  ✅ keeps the real content
+  ✅ strips 'Sure!' + 'Here's my response:'  —  You should start with the easiest task.
+  ✅ strips 'As an AI…' disclaimer  —  But your plan looks solid.
+  ✅ leaves clean text untouched
+
 ══════════════════════════════════════════════════════════════
-  RESULT:  26 passed · 0 failed  (26 checks)
+  RESULT:  35 passed · 0 failed  (35 checks)
 ══════════════════════════════════════════════════════════════
 ```

@@ -75,8 +75,10 @@ export async function contextReader(ctx: HelmContext): Promise<AgentResult & { p
     };
   }
 
-  const placeData = recentPlaceEvent.value as { zoneType: Place["zoneType"]; durationMin?: number; label?: string };
-  const hour = new Date().getHours();
+  const placeData = recentPlaceEvent.value as { zoneType: Place["zoneType"]; durationMin?: number; label?: string; hour?: number };
+  // Use the hour the place event actually happened (from its timestamp), not the wall clock —
+  // otherwise a lunch signal read at 4pm gets mislabeled as "dinner".
+  const hour = placeData.hour ?? new Date(recentPlaceEvent.ts).getHours();
   const durationMin = placeData.durationMin ?? 0;
 
   const inferFn = ZONE_INFERENCE[placeData.zoneType] ?? ZONE_INFERENCE.other;

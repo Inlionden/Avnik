@@ -4,8 +4,9 @@ import type { HelmContext } from "../state";
 import type { AgentResult } from "@/lib/types";
 import { fitChecker } from "./fit-checker";
 import { checkInterruptibility } from "./interruptibility";
+import { sanitizeReply } from "./sanitize";
 
-export { fitChecker, checkInterruptibility };
+export { fitChecker, checkInterruptibility, sanitizeReply };
 
 export type ChatMode = "chat" | "vent" | "plan" | "focus" | "review";
 
@@ -51,6 +52,8 @@ export async function applyMentor(
     styleHints,
   } as HelmContext;
 
-  const fitted = await fitChecker(result.text, result.agent, annotatedCtx, chatMode);
-  return { ...result, text: fitted };
+  // 1) Always strip artifacts (deterministic, no LLM). 2) Fit length only if needed (LLM).
+  const cleaned = sanitizeReply(result.text);
+  const fitted = await fitChecker(cleaned, result.agent, annotatedCtx, chatMode);
+  return { ...result, text: sanitizeReply(fitted) };
 }

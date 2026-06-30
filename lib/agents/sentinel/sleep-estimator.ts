@@ -45,7 +45,10 @@ export async function sleepEstimator(ctx: HelmContext): Promise<AgentResult & { 
   const sleep = estimateSleepFromGap(ctx.events ?? []);
 
   if (!sleep) {
-    return { text: "No sleep data yet — I track when you close and reopen the app overnight.", agent: "sleep-estimator" };
+    return {
+      text: "I don't have a clear read on last night's sleep yet — I infer it from when you close the app at night and reopen it in the morning. For now, tell me roughly how many hours you got and I'll factor it into today's plan.",
+      agent: "sleep-estimator",
+    };
   }
 
   const qualityText = {

@@ -15,10 +15,12 @@ How to speak:
 - One concrete micro-step, never a list of five things
 - Think: wise friend who listens first, then gently points
 
-If the user has a profile, honor their communication style. Keep it short.`;
+If the user has a profile, honor their communication style. Keep it short.
+
+Output ONLY your final message. Never narrate edits, never write "wait, let me rephrase" or any meta-commentary, never restate yourself. One clean reply.`;
 
 export async function sage(ctx: HelmContext): Promise<AgentResult> {
   const profile = ctx.profile?.name ? `\nUser's name: ${ctx.profile.name}` : "";
-  const text = await chat(ctx.messages, { system: SYSTEM + profile, temperature: 0.82 });
+  const text = await chat(ctx.messages, { system: SYSTEM + profile, temperature: 0.7 });
   return { text, agent: "sage" };
 }
