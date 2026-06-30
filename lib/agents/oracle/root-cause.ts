@@ -17,7 +17,7 @@ const LIKELIHOODS: Record<string, Record<string, number>> = {
   starts_enthusiastic_quits_fast:{ boredom: 0.85, distraction: 0.60, burnout: 0.30, clarity: 0.25 },
 };
 
-const PRIORS: Record<string, number> = {
+export const PRIORS: Record<string, number> = {
   fear: 0.15, perfectionism: 0.15, burnout: 0.15, clarity: 0.15,
   distraction: 0.15, confidence: 0.10, overplanning: 0.10, boredom: 0.05,
 };
@@ -43,15 +43,15 @@ export function runBayesUpdate(
 }
 
 // Infer evidence signals from user input
-function inferEvidenceFromText(input: string): string[] {
+export function inferEvidenceFromText(input: string): string[] {
   const t = input.toLowerCase();
   const signals: string[] = [];
-  if (/avoid|procrastinat|important|big task/.test(t)) signals.push("delays_important_tasks");
-  if (/what if|not good enough|not ready|not perfect/.test(t)) signals.push("asks_what_if_not_good_enough");
-  if (/rewrite|again|keep editing|can't finish/.test(t)) signals.push("rewrites_same_work");
-  if (/don't know where|first step|unclear|confus/.test(t)) signals.push("doesnt_know_first_step");
-  if (/tired|exhausted|burnout|everything|all tasks/.test(t)) signals.push("energy_drops_all_tasks");
-  if (/switch|distract|focus|attention/.test(t)) signals.push("rapid_task_switching");
+  if (/avoid|procrastinat|important|big task|put.?(ting|s)? off|haven.?t started/.test(t)) signals.push("delays_important_tasks");
+  if (/what if|good enough|not ready|not perfect|too sloppy|has to be perfect|never (good|right|done)/.test(t)) signals.push("asks_what_if_not_good_enough");
+  if (/rewrit|re-?do|redo|keep (editing|changing|tweaking)|over and over|can.?t finish/.test(t)) signals.push("rewrites_same_work");
+  if (/don.?t know where|first step|unclear|confus|where to start|where to begin/.test(t)) signals.push("doesnt_know_first_step");
+  if (/tired|exhaust|burn.?out|drained|no energy|energy.{0,12}(gone|drop)|everything|all tasks/.test(t)) signals.push("energy_drops_all_tasks");
+  if (/switch|distract|can.?t focus|losing focus|attention|keep checking/.test(t)) signals.push("rapid_task_switching");
   if (/plan|list|organize.*but|planning too much/.test(t)) signals.push("overplans_underexecutes");
   if (/excited.*but|start.*then|interesting.*then quit/.test(t)) signals.push("starts_enthusiastic_quits_fast");
   if (/confidence|can i|am i capable|imposter/.test(t)) signals.push("avoids_hard_tasks");

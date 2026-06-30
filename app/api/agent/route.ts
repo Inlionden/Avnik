@@ -42,6 +42,7 @@ export async function POST(req: NextRequest) {
       agent: result.agent,
       route: result.route,
       state: result.state,
+      beliefs: result.beliefs ?? null,
       sideEffects: result.sideEffects ?? [],
     });
   } catch (err) {
