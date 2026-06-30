@@ -1,10 +1,13 @@
 "use client";
 import { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Send, Zap, BookOpen, Target, BarChart3, MessageCircle, ChevronDown } from "lucide-react";
+import { Send, Zap, BookOpen, Target, BarChart3, MessageCircle, ChevronDown, Play } from "lucide-react";
 import { get, set, append, KEYS } from "@/lib/memory";
 import type { Message, Profile, BeliefState, Task, Event } from "@/lib/types";
 import type { CurrentState } from "@/lib/agents/state";
+import FocusTimer from "@/components/FocusTimer";
+
+type PendingTechnique = { name: string; workMin: number; breakMin: number };
 
 type ChatMode = "chat" | "plan" | "vent" | "focus" | "review";
 
@@ -22,6 +25,9 @@ const AGENT_META: Record<string, { label: string; emoji: string; bg: string; tex
   sensei:        { label: "Sensei",       emoji: "🎋", bg: "bg-slate-50",    text: "text-slate-700",    border: "border-slate-200" },
   "north-star":  { label: "North Star",   emoji: "⭐", bg: "bg-indigo-50",   text: "text-indigo-700",   border: "border-indigo-200" },
   quartermaster: { label: "Quartermaster",emoji: "⚔️", bg: "bg-purple-50",   text: "text-purple-700",   border: "border-purple-200" },
+  pacer:         { label: "Pacer",        emoji: "⏱️", bg: "bg-purple-50",   text: "text-purple-700",   border: "border-purple-200" },
+  triage:        { label: "Triage",       emoji: "🧮", bg: "bg-purple-50",   text: "text-purple-700",   border: "border-purple-200" },
+  starter:       { label: "Starter",      emoji: "🚀", bg: "bg-purple-50",   text: "text-purple-700",   border: "border-purple-200" },
   oracle:        { label: "Oracle",       emoji: "🔮", bg: "bg-teal-50",     text: "text-teal-700",     border: "border-teal-200" },
   auditor:       { label: "Auditor",      emoji: "🪞", bg: "bg-red-50",      text: "text-red-700",      border: "border-red-200" },
   chronicler:    { label: "Chronicler",   emoji: "📜", bg: "bg-blue-50",     text: "text-blue-700",     border: "border-blue-200" },
@@ -42,6 +48,15 @@ const MODE_PREFIXES: Record<ChatMode, string> = {
 
 type AssistantMsg = Message & { agent?: string };
 
+const PRETTY: Record<string, string> = {
+  pomodoro: "Classic Pomodoro", desktime: "DeskTime 52/17", sprint: "Sprint 50/10",
+  ultradian: "Ultradian 90", flowtime: "Flowtime", "two-minute": "2-Minute Rule",
+  frog: "Eat the Frog", timebox: "Timeboxing",
+};
+function prettyName(slug: string): string {
+  return PRETTY[slug] ?? slug.replace(/-/g, " ").replace(/\b\w/g, c => c.toUpperCase());
+}
+
 function CoachInner() {
   const searchParams = useSearchParams();
   const [messages, setMessages] = useState<AssistantMsg[]>([]);
@@ -50,8 +65,15 @@ function CoachInner() {
   const [mode, setMode] = useState<ChatMode>((searchParams?.get("mode") as ChatMode) ?? "chat");
   const [currentState, setCurrentState] = useState<Partial<CurrentState>>({});
   const [showTrail, setShowTrail] = useState(false);
+  const [pending, setPending] = useState<PendingTechnique | null>(null);
+  const [timer, setTimer] = useState<PendingTechnique | null>(null);
   const bottomRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  function launchTimer(t: PendingTechnique) {
+    setTimer(t);
+    setPending(null);
+  }
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -69,6 +91,17 @@ function CoachInner() {
   async function send(override?: string) {
     const text = (override ?? input).trim();
     if (!text || loading) return;
+
+    // If a technique is pending and the user confirms, launch the real timer.
+    if (pending && /^(yes|yep|yeah|sure|ok|okay|start|go|let'?s go|do it|begin)\b/i.test(text.trim())) {
+      launchTimer(pending);
+      setMessages(m => [...m,
+        { role: "user", content: text },
+        { role: "assistant", content: `▶️ Timer started — ${pending.name}, ${pending.workMin} min. Go.`, agent: "quartermaster" },
+      ]);
+      setInput("");
+      return;
+    }
 
     const prefix = MODE_PREFIXES[mode];
     const userMsg: AssistantMsg = { role: "user", content: text };
@@ -102,7 +135,20 @@ function CoachInner() {
       }
 
       if (data.sideEffects?.length) {
-        for (const effect of data.sideEffects as Event[]) append<Event>(KEYS.events, effect);
+        for (const effect of data.sideEffects as Event[]) {
+          append<Event>(KEYS.events, effect);
+          // A technique was suggested/created → offer a real Start button.
+          if (effect.type === "technique_suggested" || effect.type === "technique_created") {
+            const v = effect.value as { name?: string; workMin?: number; breakMin?: number };
+            if (v?.workMin) {
+              setPending({
+                name: prettyName(v.name ?? "Focus"),
+                workMin: v.workMin,
+                breakMin: v.breakMin ?? 5,
+              });
+            }
+          }
+        }
       }
       if (data.state) setCurrentState(data.state);
 
@@ -181,6 +227,29 @@ function CoachInner() {
           </button>
         </div>
       </div>
+
+      {/* ── Active focus timer ── */}
+      {timer && (
+        <div className="shrink-0">
+          <FocusTimer
+            label={timer.name}
+            workMin={timer.workMin}
+            breakMin={timer.breakMin}
+            onClose={() => setTimer(null)}
+          />
+        </div>
+      )}
+
+      {/* ── Pending technique → real Start button ── */}
+      {pending && !timer && (
+        <button
+          onClick={() => launchTimer(pending)}
+          className="shrink-0 flex items-center justify-center gap-2 rounded-2xl bg-ink text-white px-5 py-3.5 font-semibold text-sm hover:bg-brand-600 transition active:scale-[0.99] anim-fade-up"
+        >
+          <Play className="size-4" />
+          Start {pending.name} · {pending.workMin} min
+        </button>
+      )}
 
       {/* ── Agent trail (collapsible) ── */}
       {showTrail && trail.length > 0 && (

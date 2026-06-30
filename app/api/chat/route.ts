@@ -48,7 +48,9 @@ export async function POST(req: NextRequest) {
       agent: finalResult.agent,
       route: result.route,
       state: result.state,
-      sideEffects: [...(result.sideEffects ?? []), ...(finalResult.sideEffects ?? [])],
+      // applyMentor spreads result, so finalResult.sideEffects already includes
+      // result's — don't concat both or every event gets logged twice.
+      sideEffects: finalResult.sideEffects ?? [],
     });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "AI error";
