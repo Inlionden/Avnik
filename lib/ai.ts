@@ -4,7 +4,8 @@ import { google } from "@ai-sdk/google";
 import { groq } from "@ai-sdk/groq";
 import type { Message, Provider } from "./types";
 
-const DEFAULT_PROVIDER: Provider = "gemini";
+// Default to Groq for now (Gemini free-tier quota was unavailable). Switch back once a valid AIza… Gemini key is set.
+const DEFAULT_PROVIDER: Provider = "groq";
 
 const MODELS = {
   gemini: "gemini-2.0-flash",
