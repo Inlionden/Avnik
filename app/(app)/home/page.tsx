@@ -40,6 +40,7 @@ export default function HomePage() {
   const [openTasks, setOpenTasks] = useState(0);
   const [doneToday, setDoneToday] = useState(0);
   const [streak, setStreak] = useState(0);
+  const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
     const day = Math.floor(Date.now() / 86_400_000);
@@ -51,6 +52,7 @@ export default function HomePage() {
     setDoneToday(events.filter(e => e.type === "task_done" && e.ts > todayStart).length);
     const days = new Set(events.filter(e => e.source === "active").map(e => Math.floor(e.ts / 86_400_000)));
     setStreak(days.size);
+    setHydrated(true);
   }, []);
 
   function submit() {
@@ -75,7 +77,7 @@ export default function HomePage() {
           <span className="text-[11px] font-semibold text-muted uppercase tracking-widest">30 agents · ready</span>
         </div>
 
-        <p className="text-sm font-medium text-muted mb-2">{getGreeting()}.</p>
+        <p className="text-sm font-medium text-muted mb-2">{hydrated ? getGreeting() : "Hello"}.</p>
         <h1 className="text-[44px] sm:text-[60px] lg:text-[68px] font-black text-ink leading-[0.95] tracking-tight text-balance mb-7 max-w-4xl">
           What&apos;s the one thing{" "}
           <span className="relative inline-block">

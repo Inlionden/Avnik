@@ -61,7 +61,11 @@ export const KEYS = {
   tasks: "tasks",
   events: "events",
   journal: "journal",
+  journalDraft: "journal:draft",
   beliefs: "beliefs",
   places: "places",
   settings: "settings",
+  coachMessages: "coach:messages",
+  coachMode: "coach:mode",
+  coachDraft: "coach:draft",
 } as const;

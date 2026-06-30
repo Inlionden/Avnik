@@ -26,12 +26,28 @@ export default function JournalPage() {
   const [mood, setMood] = useState<string | null>(null);
   const [saved, setSaved] = useState(false);
   const [entries, setEntries] = useState<{ date: string; text: string; mood: string }[]>([]);
-  const [prompt] = useState(() => PROMPTS[Math.floor(Math.random() * PROMPTS.length)]);
+  const [prompt, setPrompt] = useState(PROMPTS[0]);
+  const [todayLabel, setTodayLabel] = useState("Today");
 
   useEffect(() => {
     const stored = get<typeof entries>(KEYS.journal, []);
     setEntries(stored.slice(-5).reverse());
+
+    const draft = get<{ text?: string; mood?: string | null } | undefined>(KEYS.journalDraft, undefined);
+    if (draft?.text) {
+      setText(draft.text);
+    }
+    if (draft?.mood) {
+      setMood(draft.mood);
+    }
+
+    setPrompt(PROMPTS[Math.floor(Math.random() * PROMPTS.length)]);
+    setTodayLabel(new Intl.DateTimeFormat("en-US", { weekday: "long", month: "long", day: "numeric" }).format(new Date()));
   }, []);
+
+  useEffect(() => {
+    set(KEYS.journalDraft, { text, mood });
+  }, [text, mood]);
 
   function save() {
     if (!text.trim()) return;
@@ -79,7 +95,7 @@ export default function JournalPage() {
         </div>
         <div className="flex items-center gap-1.5 text-xs text-muted">
           <Clock className="size-3.5" />
-          <span>{new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</span>
+          <span>{todayLabel}</span>
         </div>
       </div>
 

@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Avnik
 
-## Getting Started
+Avnik is a personal operating system for focus, reflection, and action. It combines a coach experience, task planning, a private journal, and memory-backed insights into one calm workspace.
 
-First, run the development server:
+## What is working
+- Hydration-safe journal and coach flows with local persistence for drafts, messages, and mode.
+- A coach experience with task and planning side effects that feed the app’s task and day-plan store.
+- A private journal with recent entries and mood-aware saving.
+- Home, insights, tasks, profile, and settings screens wired to the shared memory layer.
 
+## Run locally
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+```
+Then open http://localhost:3000.
+
+## Validate
+```bash
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Project structure
+- app/ — app routes and pages
+- components/ — UI and experience components
+- lib/ — shared memory, types, and agent helpers
+- features/ — product and roadmap documentation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## Notes
+The app uses local storage for MVP persistence and is ready to be connected to a remote backend later.

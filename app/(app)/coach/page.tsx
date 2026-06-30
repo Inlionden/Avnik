@@ -63,6 +63,7 @@ function CoachInner() {
   const [input, setInput] = useState(searchParams?.get("q") ?? "");
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<ChatMode>((searchParams?.get("mode") as ChatMode) ?? "chat");
+  const [hydrated, setHydrated] = useState(false);
   const [currentState, setCurrentState] = useState<Partial<CurrentState>>({});
   const [showTrail, setShowTrail] = useState(false);
   const [pending, setPending] = useState<PendingTechnique | null>(null);
@@ -80,13 +81,42 @@ function CoachInner() {
   }, [messages, loading]);
 
   useEffect(() => {
+    const storedMessages = get<AssistantMsg[]>(KEYS.coachMessages, []);
+    const storedMode = get<ChatMode | undefined>(KEYS.coachMode, undefined);
+    const storedDraft = get<string>(KEYS.coachDraft, "");
+
+    if (storedMessages.length) {
+      setMessages(storedMessages);
+    }
+    if (storedMode) {
+      setMode(storedMode);
+    }
+    if (storedDraft) {
+      setInput(storedDraft);
+    }
+
+    setHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    set(KEYS.coachMessages, messages);
+    set(KEYS.coachDraft, input);
+  }, [hydrated, messages, input]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    set(KEYS.coachMode, mode);
+  }, [hydrated, mode]);
+
+  useEffect(() => {
     // Auto-send if ?q= param provided
     const q = searchParams?.get("q");
-    if (q && messages.length === 0) {
+    if (q && messages.length === 0 && hydrated) {
       setTimeout(() => send(q), 300);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [hydrated]);
 
   async function send(override?: string) {
     const text = (override ?? input).trim();
