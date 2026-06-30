@@ -1,5 +1,5 @@
 {
-  "name": "avnik-tmp",
+  "name": "avnik",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,9 +9,17 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/google": "^4.0.3",
+    "@ai-sdk/groq": "^4.0.2",
+    "@supabase/supabase-js": "^2.108.2",
+    "ai": "^7.0.8",
+    "date-fns": "^4.4.0",
+    "lucide-react": "^1.22.0",
     "next": "16.2.9",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "zod": "^4.4.3",
+    "zustand": "^5.0.14"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
