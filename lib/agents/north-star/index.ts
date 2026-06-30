@@ -5,11 +5,13 @@ import type { AgentResult } from "@/lib/types";
 import { northStar as northStarCore } from "./core";
 import { goalKeeper } from "./goal-keeper";
 import { meaningWeaver } from "./meaning-weaver";
+import { dayPlanner } from "./day-planner";
 
-type NSMode = "goals" | "meaning" | "priority" | "all";
+type NSMode = "goals" | "meaning" | "priority" | "plan" | "all";
 
 function detectMode(input: string): NSMode {
   const t = input.toLowerCase();
+  if (/plan my day|plan my|schedule my|lay out my|map out my|plan the day|organi[sz]e my day|my day|to ?do today|need to (do|get done) today/.test(t)) return "plan";
   if (/goal|red book|become|want to be|life|mission|vision/.test(t)) return "goals";
   if (/meaning|why|purpose|connect|matter|motivation/.test(t)) return "meaning";
   if (/what (should|do) i|priority|prioriti|urgent|what now|next|rank/.test(t)) return "priority";
@@ -18,6 +20,7 @@ function detectMode(input: string): NSMode {
 
 export async function northStar(ctx: HelmContext): Promise<AgentResult> {
   const mode = detectMode(ctx.input);
+  if (mode === "plan") return dayPlanner(ctx);
   if (mode === "goals") return goalKeeper(ctx);
   if (mode === "meaning") return meaningWeaver(ctx);
 
@@ -30,4 +33,4 @@ export async function northStar(ctx: HelmContext): Promise<AgentResult> {
   return { ...result, agent: "north-star" };
 }
 
-export { northStarCore, goalKeeper, meaningWeaver };
+export { northStarCore, goalKeeper, meaningWeaver, dayPlanner };

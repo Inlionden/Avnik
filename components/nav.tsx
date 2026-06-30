@@ -19,7 +19,7 @@ export function Nav() {
   return (
     <>
       {/* Desktop left rail — clean monochrome (template style) */}
-      <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col gap-1 border-r border-border bg-surface p-4 md:flex">
+      <aside className="sticky top-0 hidden h-dvh w-56 shrink-0 flex-col gap-1 border-r border-border bg-surface p-4 md:flex select-none">
         {/* Brand */}
         <Link href="/home" className="mb-7 px-2 pt-2 flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-xl bg-ink flex items-center justify-center">

@@ -137,6 +137,7 @@ function CoachInner() {
       if (data.sideEffects?.length) {
         for (const effect of data.sideEffects as Event[]) {
           append<Event>(KEYS.events, effect);
+
           // A technique was suggested/created → offer a real Start button.
           if (effect.type === "technique_suggested" || effect.type === "technique_created") {
             const v = effect.value as { name?: string; workMin?: number; breakMin?: number };
@@ -146,6 +147,28 @@ function CoachInner() {
                 workMin: v.workMin,
                 breakMin: v.breakMin ?? 5,
               });
+            }
+          }
+
+          // Day-Planner created a task → write it into the tasks store.
+          if (effect.type === "task_created") {
+            const t = effect.value as Task & { id: string };
+            if (t?.id) {
+              const tasks = get<Task[]>(KEYS.tasks, []);
+              if (!tasks.some(x => x.id === t.id)) set(KEYS.tasks, [...tasks, t]);
+            }
+          }
+
+          // Day-Planner placed a task on the timeline → write today's day plan.
+          if (effect.type === "dayplan_slot") {
+            const v = effect.value as { hour?: number };
+            if (effect.taskId && typeof v?.hour === "number") {
+              const key = "dayplan:" + new Date().toISOString().slice(0, 10);
+              const plan = get<Record<number, string[]>>(key, {});
+              const hourTasks = plan[v.hour] ?? [];
+              if (!hourTasks.includes(effect.taskId)) {
+                set(key, { ...plan, [v.hour]: [...hourTasks, effect.taskId] });
+              }
             }
           }
         }
