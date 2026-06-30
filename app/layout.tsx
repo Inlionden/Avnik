@@ -17,8 +17,8 @@ export const viewport: Viewport = { themeColor: "#4f46e5" };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
-      <body className="min-h-dvh">
+    <html lang="en" suppressHydrationWarning className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body className="min-h-dvh" suppressHydrationWarning>
         {children}
         <PwaRegister />
       </body>
