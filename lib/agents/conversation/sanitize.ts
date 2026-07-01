@@ -3,6 +3,12 @@
 // so replies read like a polished product, not a raw model dump. No LLM call.
 
 const META_PATTERNS: RegExp[] = [
+  // Llama/Groq template boilerplate that occasionally leaks into output
+  /^\s*cutting knowledge date:.*$/gim,
+  /^\s*today date:\s*\d.*$/gim,
+  // System-prompt leakage — "You are <Agent> — Avnik's ..." echoed verbatim
+  /^\s*you are \w[\w-]* [—-] avnik'?s\b.*$/gim,
+  /\byou are (?:helmsman|promptsmith|the orchestrator)\b[^.!?\n]*[.!?\n]/gi,
   // self-corrections: "wait, let me rephrase that.", "let me try that again", "I'll restate that"
   /\b(wait,?\s*)?let me rephrase(?:\s*that)?\b[.:!\s]*/gi,
   /\b(wait,?\s*)?(?:let me|i'?ll)\s+(?:try (?:that|this)?\s*again|restate(?:\s*that)?|put that better|reword(?:\s*that)?)\b[.:!\s]*/gi,

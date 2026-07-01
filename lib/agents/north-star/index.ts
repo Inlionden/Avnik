@@ -11,7 +11,11 @@ type NSMode = "goals" | "meaning" | "priority" | "plan" | "all";
 
 function detectMode(input: string): NSMode {
   const t = input.toLowerCase();
-  if (/plan my day|plan my|schedule my|lay out my|map out my|plan the day|organi[sz]e my day|my day|to ?do today|need to (do|get done) today/.test(t)) return "plan";
+  // Day-plan intent = an explicit planning verb NEAR a day/time/task reference.
+  // (Avoids catching vague chat like "not sure what to do today".)
+  const planVerb = /\b(plan|schedule|map out|lay out|organi[sz]e|block ?out|time ?box)\b/;
+  const dayRef   = /\b(day|today|tomorrow|morning|afternoon|evening|week|tasks?|schedule|to-?dos?)\b/;
+  if (/plan my day|plan out my|schedule my day/.test(t) || (planVerb.test(t) && dayRef.test(t))) return "plan";
   if (/goal|red book|become|want to be|life|mission|vision/.test(t)) return "goals";
   if (/meaning|why|purpose|connect|matter|motivation/.test(t)) return "meaning";
   if (/what (should|do) i|priority|prioriti|urgent|what now|next|rank/.test(t)) return "priority";
