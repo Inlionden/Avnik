@@ -169,10 +169,10 @@ export default function Timer({ activeTaskId }: { activeTaskId?: string }) {
   const dashOffset = CIRC * (1 - progress);
 
   const ringColor =
-    phase === "work" ? "#4f46e5"
+    phase === "work" ? "#141414"
     : phase === "break" ? "#10b981"
     : phase === "long-break" ? "#f59e0b"
-    : "#e2e8f0";
+    : "#e8e8e8";
 
   const m = Math.floor(secsLeft / 60);
   const s = secsLeft % 60;
@@ -229,7 +229,7 @@ export default function Timer({ activeTaskId }: { activeTaskId?: string }) {
       {/* SVG ring */}
       <div className="relative select-none">
         <svg width="200" height="200">
-          <circle cx="100" cy="100" r={RADIUS} fill="none" stroke="#e2e8f0" strokeWidth="12" />
+          <circle cx="100" cy="100" r={RADIUS} fill="none" stroke="#e8e8e8" strokeWidth="12" />
           <circle
             cx="100"
             cy="100"
