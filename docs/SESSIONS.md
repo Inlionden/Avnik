@@ -2,8 +2,15 @@
 
 > Open 5 Claude Code sessions. Paste the matching brief into each. **Every session attaches:** [`OUTLINE.md`](OUTLINE.md) · [`TECH-STACK.md`](TECH-STACK.md) · [`PAGES.md`](PAGES.md) · this file. Then its own spec files (listed per session).
 
-## 🔴 Order rule
-**Session 1 commits the shared contracts + shell FIRST (~first hour).** The other 4 start *immediately* coding their own logic/components against the **Shared Contracts below** (with mock data), then pull Session 1's commit and integrate. Use a **branch per session** (`s1-ui`, `s2-agents`, …).
+## ✅ Foundation is DONE (commit `e23a5ba`)
+Shared contracts + Aurora shell + PWA + working chat are built & committed on `master`.
+**All sessions work in the SAME folder** `D:\ganesha\Om\deployment\Avnik` — shared `node_modules`, one branch, no worktrees. Coordination = **strict file ownership + the journal** (sessions edit different files, so they don't collide).
+
+### Single-folder rules
+- **Stay in your Owns list** — this is what prevents collisions. Never edit another session's files.
+- **One dev server at a time** — only one session runs `npm run dev` (port 3000). Others just edit code, or use `npm run dev -- -p 3001`.
+- **Coordinate package installs** — need a new npm package? Note it in your journal and install **one at a time** (two simultaneous `npm install` can corrupt `node_modules`).
+- **Commit your own files** with a `[s2] …` prefix. Disjoint ownership ⇒ no merge conflicts.
 
 ## 🚫 Collision rules (every session)
 1. **Only edit files in your "Owns" list.** Never touch another session's folder.

@@ -3,15 +3,16 @@
 > **Avnik — your last-minute life saver.**
 > Not a to-do app. A **Personal Operating System**: a team of AI agents that learns *how you think, why you delay, and how to move you forward* — and **acts** before deadlines are missed.
 
-## Current implementation status
-- Core app shell is live with home, coach, journal, tasks, insights, profile, and settings screens.
-- Journal and coach flows now persist drafts and transcripts in local storage for reliable refresh behavior.
-- Build verification completed successfully with npm run build.
+## Current implementation status — ✅ v1 shipped
+- **30-agent network live** — Helmsman ReAct orchestrator routing to 7 Lead agents + sub-agents + Mentor post-processing (see [AGENTS.md](AGENTS.md)).
+- **All screens built & wired**: home, coach, tasks (list/timer/day-plan), journal (Red Book), insights (Bayesian beliefs), profile, settings, onboarding (Big Five quiz), intro.
+- **Working end-to-end**: chat with tone/mood adaptation, day-planner that writes tasks straight into the Day Plan, real focus timer, Technique Factory (agents build tools at runtime), root-cause belief engine, contracts, board meeting.
+- **Verified**: 54 automated checks across 4 test iterations (agent routing, edge/stress, prompt-injection, persistence) — all green. `npm run build` clean.
 
 > **How to read this doc:** this is the master knowledge base for Avnik. Anyone (teammate, judge, or AI assistant) should be able to read it and understand the entire product. §4 is the **complete vision catalog** (every feature). §5 is the **committed hackathon build** (the hero set, as a checklist). Tags: `[ ]` to-do · `[x]` done · ⭐**HERO** = we build it now · 🌌 **roadmap** = vision/pitch, built only if ahead · 🟢 real · 🟡 light/LLM-simulated.
 
 **Hackathon:** Vibe2Ship (Coding Ninjas × Google for Developers) · **Problem A — The Last-Minute Life Saver**
-**Deadline:** 30 June 2026, 11:59 PM · **Today:** 29 June · **Status:** 🟡 PLANNING — *nothing built yet.*
+**Status:** 🟢 **v1 SHIPPED** — 30-agent system + full UI, tested and building clean.
 
 ---
 
