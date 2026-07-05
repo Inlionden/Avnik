@@ -69,7 +69,7 @@ export async function pacer(ctx: HelmContext): Promise<AgentResult> {
 Output ONLY JSON: { "name": "...", "workMin": N, "breakMin": N, "reason": "..." }
 Example: { "name": "Arjun Focus", "workMin": 40, "breakMin": 8, "reason": "40-min blocks fit your attention pattern" }`;
     try {
-      const raw = await chat(ctx.messages, { system: SYSTEM, temperature: 0.3 });
+      const raw = await chat(ctx.messages, { system: SYSTEM, temperature: 0.3, raw: true });
       const parsed = JSON.parse(raw.trim());
       createTechniqueTool(parsed.name, parsed.workMin, parsed.breakMin);
       return {

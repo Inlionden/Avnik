@@ -1,11 +1,12 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, MessageCircle, ListChecks, BookOpen, BarChart3, User, Settings } from "lucide-react";
+import { Home, MessageCircle, ListChecks, CalendarDays, BookOpen, BarChart3, User, Settings } from "lucide-react";
 
 const items = [
   { href: "/home",     label: "Home",      icon: Home },
   { href: "/coach",    label: "Forge",     icon: MessageCircle },
+  { href: "/calendar", label: "Calendar",  icon: CalendarDays },
   { href: "/tasks",    label: "Tasks",     icon: ListChecks },
   { href: "/journal",  label: "Sanctuary", icon: BookOpen },
   { href: "/insights", label: "Patterns",  icon: BarChart3 },

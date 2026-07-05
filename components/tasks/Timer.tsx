@@ -9,8 +9,17 @@ import type { Event, Task } from "@/lib/types";
 type Phase = "idle" | "work" | "break" | "long-break";
 
 export default function Timer({ activeTaskId }: { activeTaskId?: string }) {
-  const techniques = listTechniques();
-  const [technique, setTechnique] = useState<TechniquePreset>(techniques[0]);
+  const [techniques, setTechniques] = useState<TechniquePreset[]>(listTechniques());
+  const [technique, setTechnique] = useState<TechniquePreset>(listTechniques()[0]);
+
+  // Merge in agent-built techniques (Pacer's tool-writing) persisted client-side.
+  useEffect(() => {
+    const custom = memory.get<TechniquePreset[]>(memory.KEYS.techniques, []);
+    if (custom.length) {
+      const base = listTechniques();
+      setTechniques([...base, ...custom.filter(c => !base.some(p => p.slug === c.slug))]);
+    }
+  }, []);
   const [phase, setPhase] = useState<Phase>("idle");
   const [secsLeft, setSecsLeft] = useState(0);
   const [cycles, setCycles] = useState(0);

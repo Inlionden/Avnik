@@ -55,7 +55,7 @@ async function route(ctx: HelmContext): Promise<RouteName> {
       role: "user",
       content: `User message: "${ctx.input}"\nMood: ${ctx.state.mood} | Phase: ${ctx.state.phase}`,
     };
-    const result = await chat([routingMsg], { system: ROUTING_SYSTEM, temperature: 0.2 });
+    const result = await chat([routingMsg], { system: ROUTING_SYSTEM, temperature: 0.2, raw: true });
     const name = result.trim().toLowerCase() as RouteName;
     return ALL_ROUTES.includes(name) ? name : "tone";
   } catch {
@@ -124,16 +124,27 @@ export async function helmsmanRun(req: HelmRequest): Promise<AgentResult & { sta
   // Step 3.5 — Mentor (quality layer): sanitize artifacts + fit length/tone to the mode.
   const result = await applyMentor(rawResult, { ...ctx, state }, req.mode ?? "chat");
 
-  // Step 4 — Observe (log to trail)
-  const finalState = addToTrail(state, {
+  // Step 3.6 — CHAIN (multi-agent pipeline): a second specialist finishes what
+  // the first started. Plan → technique to start now; diagnosis → first step.
+  const chained = await runChain(routeName, result, { ...ctx, input: cleanInput, state });
+
+  // Step 4 — Observe (log every agent that acted to the trail)
+  let finalState = addToTrail(state, {
     agent: result.agent,
     ts: Date.now(),
     summary: result.text.slice(0, 120),
   });
+  if (chained) {
+    finalState = addToTrail(finalState, {
+      agent: chained.agent,
+      ts: Date.now(),
+      summary: chained.text.slice(0, 120),
+    });
+  }
 
   // Persist the passive belief update (unless the agent already emitted one) so the
   // dashboard + next turn read the evolving belief state.
-  const sideEffects = [...(result.sideEffects ?? [])];
+  const sideEffects = [...(result.sideEffects ?? []), ...(chained?.sideEffects ?? [])];
   if (tracked && !sideEffects.some((e) => e.type === "belief_updated")) {
     sideEffects.push({
       ts: Date.now(),
@@ -143,11 +154,51 @@ export async function helmsmanRun(req: HelmRequest): Promise<AgentResult & { sta
     });
   }
 
+  // Merge chained agent's contribution into the reply (clearly attributed).
+  const text = chained ? `${result.text}\n\n↳ ${chained.text}` : result.text;
+
   return {
     ...result,
+    text,
     sideEffects,
     beliefs: ctx.beliefs,
     state: finalState,
-    route: routeName,
+    route: chained ? `${routeName}+${chained.agent}` : routeName,
   };
+}
+
+// ── Multi-agent chains ───────────────────────────────────────────────────────
+// After the primary agent, one complementary specialist may finish the job.
+// Kept to a single follow-up per turn to protect latency.
+import { pacer } from "./quartermaster/pacer";
+import { starter } from "./quartermaster/starter";
+import { sanitizeReply } from "./conversation";
+
+async function runChain(
+  routeName: RouteName,
+  primary: AgentResult,
+  ctx: HelmContext,
+): Promise<AgentResult | null> {
+  try {
+    const se = primary.sideEffects ?? [];
+
+    // Chain 1: a plan was created → Pacer immediately proposes how to START it.
+    if (routeName === "north-star" && se.some(e => e.type === "task_created")) {
+      const follow = await pacer(ctx);
+      return { ...follow, text: sanitizeReply(follow.text) };
+    }
+
+    // Chain 2: Oracle diagnosed why the user is stuck → Starter gives the first
+    // 2-minute move that breaks exactly that blocker.
+    if (routeName === "oracle" && /fear|perfection|clarity|distract|burnout|confidence/i.test(primary.text)) {
+      const follow = await starter({
+        ...ctx,
+        input: `Based on this diagnosis, give the single smallest first step: ${primary.text.slice(0, 200)}`,
+      });
+      return { ...follow, text: sanitizeReply(follow.text) };
+    }
+  } catch {
+    // A failed chain never breaks the primary reply.
+  }
+  return null;
 }

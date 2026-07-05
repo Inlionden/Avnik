@@ -73,6 +73,18 @@ export type AgentResult = {
   sideEffects?: Event[];
 };
 
+// ── Calendar (agent-created, persistent) ──────────────────
+export type CalendarEntry = {
+  id: string;
+  date: string;        // YYYY-MM-DD
+  hour: number;        // 0-23 start hour
+  durationMin: number;
+  title: string;
+  taskId?: string;
+  source: "agent" | "user";
+  createdAt: number;
+};
+
 // ── Places (LifeOS, opt-in) ────────────────────────────────
 export type Place = {
   id: string;

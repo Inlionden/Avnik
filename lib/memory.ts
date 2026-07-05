@@ -68,4 +68,7 @@ export const KEYS = {
   coachMessages: "coach:messages",
   coachMode: "coach:mode",
   coachDraft: "coach:draft",
+  calendar: "calendar",       // persistent dated entries created by agents/user
+  techniques: "techniques",   // custom techniques the agents built (tool-writing)
+  nudges: "nudges",           // pulse-generated proactive nudges
 } as const;

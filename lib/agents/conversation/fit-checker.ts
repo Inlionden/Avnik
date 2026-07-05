@@ -46,7 +46,7 @@ Rewrite it to hit the target length while keeping all key information.
 Output ONLY the rewritten response. Nothing else.`;
 
   try {
-    return await chat([{ role: "user", content: "fix this" }], { system: SYSTEM, temperature: 0.4 });
+    return await chat([{ role: "user", content: "fix this" }], { system: SYSTEM, temperature: 0.4, raw: true });
   } catch {
     return draft; // on error, return original
   }

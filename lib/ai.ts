@@ -31,7 +31,13 @@ function model(provider: Provider) {
   return groq(MODELS.groq);
 }
 
-type ChatOpts = { provider?: Provider; system?: string; temperature?: number };
+type ChatOpts = {
+  provider?: Provider;
+  system?: string;
+  temperature?: number;
+  /** Skip the shared agent constitution (for pure-JSON extractors like day-planner). */
+  raw?: boolean;
+};
 
 function toCore(messages: Message[]) {
   return messages
@@ -39,12 +45,22 @@ function toCore(messages: Message[]) {
     .map((m) => ({ role: m.role as "user" | "assistant", content: m.content }));
 }
 
+// Every agent call passes through here — the one choke point where the shared
+// multi-agent protocol (lib/agents/constitution.ts) is guaranteed to apply.
+import { withConstitution } from "./agents/constitution";
+
+function buildSystem(opts: ChatOpts): string | undefined {
+  if (!opts.system) return undefined;
+  return opts.raw ? opts.system : withConstitution(opts.system);
+}
+
 /** One-shot completion with automatic Groq→Groq2 fallback. */
 export async function chat(messages: Message[], opts: ChatOpts = {}): Promise<string> {
+  const system = buildSystem(opts);
   try {
     const { text } = await generateText({
       model: model(opts.provider ?? DEFAULT_PROVIDER),
-      system: opts.system,
+      system,
       temperature: opts.temperature ?? 0.7,
       messages: toCore(messages),
     });
@@ -54,7 +70,7 @@ export async function chat(messages: Message[], opts: ChatOpts = {}): Promise<st
     if ((opts.provider ?? DEFAULT_PROVIDER) === "groq" && process.env.GROQ_API_KEY_2) {
       const { text } = await generateText({
         model: groq(MODELS.groq2),
-        system: opts.system,
+        system,
         temperature: opts.temperature ?? 0.7,
         messages: toCore(messages),
       });

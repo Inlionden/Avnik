@@ -24,12 +24,18 @@ Rules:
 Output ONLY valid JSON, no prose:
 { "tasks": [ { "title": "...", "importance": 85, "hour": 10, "durationMin": 50 } ], "note": "one encouraging sentence" }`;
 
-  let parsed: { tasks: PlannedTask[]; note: string };
-  try {
-    const raw = await chat(ctx.messages, { system: SYSTEM, temperature: 0.4 });
-    const json = raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1);
-    parsed = JSON.parse(json);
-  } catch {
+  // LLM JSON extraction with one retry — a single flaky generation must not
+  // cost the user their plan.
+  let parsed: { tasks: PlannedTask[]; note: string } | null = null;
+  for (let attempt = 0; attempt < 2 && !parsed; attempt++) {
+    try {
+      const raw = await chat(ctx.messages, { system: SYSTEM, temperature: attempt === 0 ? 0.4 : 0.2, raw: true });
+      const json = raw.slice(raw.indexOf("{"), raw.lastIndexOf("}") + 1);
+      const candidate = JSON.parse(json);
+      if (Array.isArray(candidate.tasks)) parsed = candidate;
+    } catch { /* retry once, then fall through */ }
+  }
+  if (!parsed) {
     return {
       text: "Tell me what's on your plate today — meetings, study, errands — and I'll lay it out on your timeline.",
       agent: "day-planner",
@@ -44,7 +50,12 @@ Output ONLY valid JSON, no prose:
     };
   }
 
-  // Build task_created + dayplan_slot sideEffects
+  // Which day is the user planning? "tomorrow" shifts every entry one day out.
+  const isTomorrow = /\btomorrow\b/i.test(ctx.input);
+  const target = new Date(now + (isTomorrow ? 86_400_000 : 0));
+  const dateStr = target.toISOString().slice(0, 10); // YYYY-MM-DD
+
+  // Build task_created + dayplan_slot + persistent calendar_event sideEffects
   const sideEffects: Event[] = [];
   const summaryLines: string[] = [];
 
@@ -57,22 +68,41 @@ Output ONLY valid JSON, no prose:
       taskId: id,
       value: { id, title: t.title, importance: t.importance, status: "todo", createdAt: now },
     });
+    if (!isTomorrow) {
+      sideEffects.push({
+        ts: now,
+        type: "dayplan_slot",
+        source: "active",
+        taskId: id,
+        value: { hour: t.hour, durationMin: t.durationMin },
+      });
+    }
+    // The persistent record: stays on the calendar across days ("auto keep it there").
     sideEffects.push({
       ts: now,
-      type: "dayplan_slot",
+      type: "calendar_event",
       source: "active",
       taskId: id,
-      value: { hour: t.hour, durationMin: t.durationMin },
+      value: {
+        id: `cal_${now}_${i}`,
+        date: dateStr,
+        hour: t.hour,
+        durationMin: t.durationMin,
+        title: t.title,
+        taskId: id,
+        source: "agent",
+        createdAt: now,
+      },
     });
     const ampm = t.hour === 12 ? "12pm" : t.hour < 12 ? `${t.hour}am` : `${t.hour - 12}pm`;
     summaryLines.push(`• ${ampm} — ${t.title} (${t.durationMin}m)`);
   });
 
+  const dayWord = isTomorrow ? "tomorrow" : "today";
   const text =
-    `📅 Planned your day — ${tasks.length} task${tasks.length > 1 ? "s" : ""} added to your Day Plan:\n\n` +
+    `📅 Planned ${dayWord} — ${tasks.length} task${tasks.length > 1 ? "s" : ""} on your Calendar:\n\n` +
     summaryLines.join("\n") +
-    (parsed.note ? `\n\n${parsed.note}` : "") +
-    `\n\nOpen **Tasks → Day Plan** to see them on your timeline.`;
+    (parsed.note ? `\n\n${parsed.note}` : "");
 
   return { text, agent: "day-planner", sideEffects };
 }

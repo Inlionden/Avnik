@@ -3,7 +3,7 @@ import { useState, useRef, useEffect, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { Send, Zap, BookOpen, Target, BarChart3, MessageCircle, ChevronDown, Play } from "lucide-react";
 import { get, set, append, KEYS } from "@/lib/memory";
-import type { Message, Profile, BeliefState, Task, Event } from "@/lib/types";
+import type { Message, Profile, BeliefState, Task, Event, CalendarEntry } from "@/lib/types";
 import type { CurrentState } from "@/lib/agents/state";
 import FocusTimer from "@/components/FocusTimer";
 
@@ -177,6 +177,33 @@ function CoachInner() {
                 workMin: v.workMin,
                 breakMin: v.breakMin ?? 5,
               });
+            }
+            // Agent-built tool: persist it so it appears in the Timer forever.
+            if (effect.type === "technique_created" && v?.name && v?.workMin) {
+              const existing = get<{ slug: string }[]>(KEYS.techniques, []);
+              const slug = "custom-" + v.name.toLowerCase().replace(/\s+/g, "-").replace(/[^a-z0-9-]/g, "");
+              if (!existing.some(t => t.slug === slug)) {
+                set(KEYS.techniques, [...existing, {
+                  slug,
+                  name: v.name,
+                  workMin: v.workMin,
+                  breakMin: v.breakMin ?? 5,
+                  description: `${v.workMin} min work · ${v.breakMin ?? 5} min break — built by Pacer for you`,
+                  bestFor: "Your custom rhythm",
+                  emoji: "🛠️",
+                }]);
+              }
+            }
+          }
+
+          // Agent scheduled something on the calendar → persist it (stays there).
+          if (effect.type === "calendar_event") {
+            const entry = effect.value as CalendarEntry;
+            if (entry?.id && entry?.date) {
+              const cal = get<CalendarEntry[]>(KEYS.calendar, []);
+              if (!cal.some(c => c.id === entry.id)) {
+                set(KEYS.calendar, [...cal, entry]);
+              }
             }
           }
 
