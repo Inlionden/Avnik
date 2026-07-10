@@ -52,11 +52,46 @@ def infer_evidence_from_text(text: str) -> list:
     return signals
 
 
-def _confidence(dist: dict) -> float:
+def confidence(dist: dict) -> float:
     values = list(dist.values())
     entropy = -sum(p * math.log(p) for p in values if p > 0)
     max_entropy = math.log(len(values)) if values else 1
     return max(0.0, 1 - entropy / max_entropy) if max_entropy else 0.0
+
+
+QUESTION_LADDERS = {
+    "fear": ["Why haven't you started this?", "What do you think will happen if you submit it?",
+              "Who are you most afraid of judging it?", "What happens if it's not perfect?"],
+    "perfectionism": ["How many times have you revised this already?", "What would 'good enough' look like?",
+                        "What's the cost of shipping a version-1 draft?"],
+    "burnout": ["When did you last feel energized?", "What's one thing that would take something off your plate?"],
+    "clarity": ["What's the very first physical action you'd need to take?", "If you had to start in 60 seconds, where would you click first?"],
+    "distraction": ["What keeps pulling your attention away?", "What's the environment like right now?"],
+    "confidence": ["What's your evidence that you can't do this?", "What's one similar thing you've done before?"],
+    "boredom": ["What about this task is genuinely boring?", "What would make this interesting?"],
+    "overplanning": ["How many hours have you spent planning vs doing?", "What's the minimum you need to know before starting?"],
+}
+
+
+async def socratic(ctx: HelmContext) -> AgentResult:
+    top_cause = "clarity"
+    if ctx.beliefs and ctx.beliefs.rootCauses:
+        top_cause = max(ctx.beliefs.rootCauses, key=ctx.beliefs.rootCauses.get)
+    ladder = QUESTION_LADDERS.get(top_cause, QUESTION_LADDERS["clarity"])
+    question_count = sum(1 for m in ctx.messages if m.get("agent") == "socratic")
+    next_question = ladder[min(question_count, len(ladder) - 1)]
+
+    prev = ctx.messages[-6:]
+    prev_str = "\n".join(f"{'You' if m.get('role') == 'user' else 'Socratic'}: {m.get('content', '')}" for m in prev) or "None yet."
+
+    system = (
+        f"You are Socratic-Interviewer — you ask one precise question to uncover the real reason "
+        f"the user is stuck.\nSuspected root cause: {top_cause}\nCurrent question in ladder: "
+        f'"{next_question}"\nPrior exchange:\n{prev_str}\n\nAsk ONLY the next question. Nothing else. '
+        f'No advice. After 3-5 questions, if the cause is clear: say "Root cause identified: [X]" and stop.'
+    )
+    text = await chat(ctx.messages, system=system, temperature=0.6)
+    return AgentResult(text=text, agent="socratic")
 
 
 async def root_cause(ctx: HelmContext) -> AgentResult:
@@ -64,19 +99,19 @@ async def root_cause(ctx: HelmContext) -> AgentResult:
     for signal in infer_evidence_from_text(ctx.input):
         current = run_bayes_update(current, signal)
 
-    confidence = _confidence(current)
+    conf = confidence(current)
     top3 = sorted(current.items(), key=lambda kv: kv[1], reverse=True)[:3]
     top3_str = " · ".join(f"{c.replace('_', ' ')}: {round(p * 100)}%" for c, p in top3)
     beliefs = {
         "rootCauses": current,
-        "confidence": confidence,
+        "confidence": conf,
         "traits": (ctx.beliefs.traits if ctx.beliefs else {}),
         "updatedAt": now_ms(),
     }
 
     system = (
         f"You are Root-Cause — Avnik's Bayesian diagnostic agent.\n"
-        f"Current belief update: {top3_str}\nConfidence: {round(confidence * 100)}%\n\n"
+        f"Current belief update: {top3_str}\nConfidence: {round(conf * 100)}%\n\n"
         f"Translate this into a 2-sentence human insight. Never say 'you have X disorder.'\n"
         f"Say \"It looks like {top3[0][0].replace('_', ' ')} is the most likely driver right now.\"\n"
         f"Then name ONE intervention matched to the top cause."
@@ -86,3 +121,33 @@ async def root_cause(ctx: HelmContext) -> AgentResult:
         text=text, agent="root-cause", beliefs=beliefs,
         sideEffects=[{"ts": now_ms(), "type": "belief_updated", "source": "active", "value": beliefs}],
     )
+
+
+def _detect_oracle_mode(ctx: HelmContext) -> str:
+    t = ctx.input.lower()
+    if re.search(r"why am i|why do i|root cause|what's wrong|diagnose|belief", t):
+        return "root-cause"
+    if re.search(r"ask me|question|interview|dig deeper|help me think", t):
+        return "socratic"
+    if re.search(r"pattern|analyze|what do you see|my behavior|my history", t):
+        return "core"
+    if ctx.beliefs and ctx.beliefs.confidence and ctx.beliefs.confidence < 0.6:
+        return "root-cause"
+    return "core"
+
+
+async def oracle(ctx: HelmContext) -> AgentResult:
+    """Oracle Lead router — dispatches to root-cause / socratic / core (pattern analysis)."""
+    mode = _detect_oracle_mode(ctx)
+    if mode == "socratic":
+        return await socratic(ctx)
+    if mode == "core":
+        events = len(ctx.events)
+        system = (
+            "You are Oracle — Avnik's pattern-analysis agent. Look across the user's recent "
+            f"behavior ({events} logged signals) and name ONE pattern you notice, stated plainly, "
+            "with one grounded suggestion. Avoid diagnosing; describe what you observe."
+        )
+        text = await chat(ctx.messages, system=system, temperature=0.65)
+        return AgentResult(text=text, agent="oracle")
+    return await root_cause(ctx)

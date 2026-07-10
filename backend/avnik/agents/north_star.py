@@ -84,9 +84,53 @@ async def day_planner(ctx: HelmContext) -> AgentResult:
     return AgentResult(text=text, agent="day-planner", sideEffects=side_effects)
 
 
+async def goal_keeper(ctx: HelmContext) -> AgentResult:
+    goals = [t for t in ctx.tasks if t.goalId is None and (t.importance or 0) >= 80]
+    goal_list = "\n".join(f'{i+1}. "{g.title}"' for i, g in enumerate(goals)) or "No goals set yet."
+    system = (
+        "You are Goal-Keeper — guardian of the Red Book (the user's life goals): what they want "
+        f"to BECOME, not just tasks to complete.\n\nCurrent Red Book goals:\n{goal_list}\n\n"
+        'If adding a goal: extract it clearly, ask "What does achieving this make you?" '
+        'Format any new goal as: GOAL: "[title]" | WHY: "[deeper reason]". Be reverent — these matter.'
+    )
+    text = await chat(ctx.messages, system=system, temperature=0.75)
+    return AgentResult(text=text, agent="goal-keeper")
+
+
+async def meaning_weaver(ctx: HelmContext) -> AgentResult:
+    tasks = [t for t in ctx.tasks if t.status != "done"][:5]
+    task_list = "\n".join(
+        f'- "{t.title}"' + (f" [linked to goal {t.goalId}]" if t.goalId else " [UNLINKED]") for t in tasks
+    ) or "No tasks yet."
+    system = (
+        "You are Meaning-Weaver — connect tasks to what the user actually cares about. Every task "
+        "without meaning is friction; every task WITH meaning becomes fuel (Temporal Motivation "
+        f"Theory: low VALUE is fixed by connecting to a North Star).\n\nUnlinked tasks:\n{task_list}\n\n"
+        "For each: 1) suggest which goal it serves, 2) write one visceral sentence — "
+        '"Finishing [task] means you\'re one step closer to [identity goal]." Use their own language.'
+    )
+    text = await chat(ctx.messages, system=system, temperature=0.8)
+    return AgentResult(text=text, agent="meaning-weaver")
+
+
+def _detect_ns_mode(t: str) -> str:
+    t = t.lower()
+    if re.search(r"goal|red book|become|want to be|life|mission|vision", t):
+        return "goals"
+    if re.search(r"meaning|why|purpose|connect|matter|motivation", t):
+        return "meaning"
+    return "priority"
+
+
 async def north_star(ctx: HelmContext) -> AgentResult:
     if _detect_plan_intent(ctx.input):
         return await day_planner(ctx)
+
+    mode = _detect_ns_mode(ctx.input)
+    if mode == "goals":
+        return await goal_keeper(ctx)
+    if mode == "meaning":
+        return await meaning_weaver(ctx)
 
     now = now_ms()
     tasks = [t for t in ctx.tasks if t.status != "done"]

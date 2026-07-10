@@ -15,9 +15,17 @@ from pydantic import BaseModel
 from typing import List, Dict, Any
 
 from avnik.models import ChatRequest, now_ms
-from avnik.orchestrator import run_helmsman
 from avnik.pulse import run_pulse
 from avnik import llm
+
+# Prefer the LangGraph StateGraph orchestrator; fall back to the hand-rolled one
+# if langgraph isn't installed.
+try:
+    from avnik.graph import run_graph as run_chat
+    ENGINE = "langgraph"
+except Exception:
+    from avnik.orchestrator import run_helmsman as run_chat
+    ENGINE = "orchestrator"
 
 app = FastAPI(title="Avnik Agent Backend", version="1.0.0")
 
@@ -32,13 +40,13 @@ app.add_middleware(
 
 @app.get("/health")
 async def health():
-    return {"ok": True, "model": llm.MODEL, "provider": "nvidia-nim (openai-sdk)"}
+    return {"ok": True, "model": llm.MODEL, "provider": "nvidia-nim (openai-sdk)", "engine": ENGINE}
 
 
 @app.post("/chat")
 async def chat_endpoint(req: ChatRequest):
     try:
-        return await run_helmsman(req)
+        return await run_chat(req)
     except Exception as e:
         return {"error": f"{type(e).__name__}: {e} — check NVIDIA_API_KEY"}
 

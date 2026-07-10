@@ -7,10 +7,11 @@ from .state import regulate, add_to_trail
 from .mentor import apply_mentor, sanitize_reply
 from .agents.tone import tone_selector
 from .agents.north_star import north_star
-from .agents.quartermaster import pacer
-from .agents.oracle import root_cause
+from .agents.quartermaster import quartermaster, pacer, starter
+from .agents.oracle import oracle
+from .agents.sentinel import sentinel
 from .agents.simple import (
-    auditor, chronicler, sentinel, archivist, courier, promptsmith,
+    auditor, chronicler, archivist, courier, promptsmith,
 )
 
 ROUTES = ["tone", "north-star", "quartermaster", "oracle", "auditor",
@@ -19,8 +20,8 @@ ROUTES = ["tone", "north-star", "quartermaster", "oracle", "auditor",
 AGENT_MAP = {
     "tone": tone_selector,
     "north-star": north_star,
-    "quartermaster": pacer,
-    "oracle": root_cause,
+    "quartermaster": quartermaster,
+    "oracle": oracle,
     "auditor": auditor,
     "chronicler": chronicler,
     "sentinel": sentinel,
